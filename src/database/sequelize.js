@@ -10,13 +10,13 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: 'mysql',
-    logging: false,
+    logging: true,
     define: {
       freezeTableName: true,
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
-      paranoid: true,
+      paranoid: false,
       deletedAt: 'deleted_at',
     },
     pool: {

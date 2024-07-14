@@ -62,40 +62,63 @@ router.post('/colaboradores', async (req, res) => {
 // Actualizar un colaborador
 router.put('/colaboradores/:id', async (req, res) => {
   const { id } = req.params;
-  const { identidad, cargo, nombre, apellido, telefono, correo } = req.body;
+  const { identidad, cargo, nombre, apellido, telefono, correo, password, newPassword } = req.body;
 
   try {
     const colaborador = await Colaborador.findByPk(id);
 
     if (!colaborador) {
-      throw new ApiError(404, 'Colaborador no encontrado', 'Error');
+      return res.status(404).json(new ApiResponse(404, 'Colaborador no encontrado', false, null, 'Error'));
     }
 
-    colaborador.identidad = identidad;
-    colaborador.cargo = cargo;
-    colaborador.nombre = nombre;
-    colaborador.apellido = apellido;
-    colaborador.telefono = telefono;
-    colaborador.correo = correo;
+    // Verificar si se proporcionó una nueva contraseña y confirmación
+    if (newPassword) {
+      colaborador.password = newPassword;
+    } else {
+      return res.status(400).json(new ApiResponse(400, 'Debe proporcionar una nueva contraseña', false, null, 'Error'));
+    }
+
+    // Actualizar otros campos según sea necesario
+    colaborador.identidad = identidad || colaborador.identidad;
+    colaborador.cargo = cargo || colaborador.cargo;
+    colaborador.nombre = nombre || colaborador.nombre;
+    colaborador.apellido = apellido || colaborador.apellido;
+    colaborador.telefono = telefono || colaborador.telefono;
+    colaborador.correo = correo || colaborador.correo;
 
     await colaborador.save();
 
-    res.status(200).json(new ApiResponse({
-      statusCode: 200,
-      message: 'Colaborador actualizado',
-      success: true,
-      data: colaborador,
-      title: 'Éxito'
-    }));
+    res.status(200).json(new ApiResponse(200, 'Colaborador actualizado', true, colaborador, 'Éxito'));
   } catch (error) {
     console.error(`Error al actualizar colaborador ${id}:`, error);
-    res.status(error.statusCode || 500).json(new ApiResponse({
-      statusCode: error.statusCode || 500,
-      message: error.message || 'Error al actualizar colaborador',
-      success: false,
-      title: 'Error'
-    }));
+    res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al actualizar colaborador', false, null, 'Error'));
   }
 });
+
+
+
+  // Eliminar un colaborador
+  router.delete('/colaboradores/:id', async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      console.log(`Intentando eliminar colaborador con ID: ${id}`);
+      const colaborador = await Colaborador.findByPk(id);
+  
+      if (!colaborador) {
+        console.log(`Colaborador con ID ${id} no encontrado`);
+        return res.status(404).json(new ApiResponse(404, 'Colaborador no encontrado', false, null, 'Error'));
+      }
+  
+      await colaborador.destroy();
+  
+      console.log(`Colaborador con ID ${id} eliminado correctamente`);
+      res.status(200).json(new ApiResponse(200, 'Colaborador eliminado', true, null, 'Éxito'));
+    } catch (error) {
+      console.error(`Error al eliminar colaborador ${id}:`, error);
+      res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al eliminar colaborador', false, null, 'Error'));
+    }
+  });
+
 
 module.exports = router;
