@@ -4,12 +4,13 @@
   "description": "",
   "main": "app.ts",
   "scripts": {
-    "build": "npx tsc",
-    "start": "ts-node src/app.ts",
-    "dev": "ts-node helpers/env.ts && nodemon src/app.ts",
-    "command": "node commands/index.ts",
-    "seeder:run": "ts-node database/seeders/seed.ts"
-  },
+  "build": "npx tsc",
+  "start": "ts-node src/app.js",
+  "dev": "nodemon src/app.js",
+  "command": "node commands/index.ts",
+  "seeder:run": "node database/seeders/seed.js"
+},
+
   "keywords": [],
   "author": "Fernando Mendez",
   "license": "ISC",
