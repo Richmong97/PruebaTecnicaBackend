@@ -16,24 +16,46 @@ const validateBody = (schema) => (req, res, next) => {
 // Obtener todos los colaboradores
 router.get('/colaboradores', async (req, res) => {
   try {
-    const colaboradores = await Colaborador.findAll();
-    res.status(200).json(new ApiResponse({
-      statusCode: 200,
-      message: 'Colaboradores encontrados',
-      success: true,
-      data: colaboradores, // Asegúrate de que `colaboradores` contenga los datos correctamente
-      title: 'Éxito'
+    const colaboradores = await Colaborador.findAll({
+      where: { deleted_at: null } // Solo colaboradores activos
+    });
+
+    // Mapear los colaboradores a un arreglo sin envolverlos en un objeto adicional
+    const colaboradoresData = colaboradores.map(colaborador => ({
+      id: colaborador.id,
+      identidad: colaborador.identidad,
+      cargo: colaborador.cargo,
+      nombre: colaborador.nombre,
+      apellido: colaborador.apellido,
+      telefono: colaborador.telefono,
+      correo: colaborador.correo
+      // Añadir otras propiedades necesarias si las hay
     }));
+
+    res.status(200).json(colaboradoresData);
   } catch (error) {
     console.error('Error al buscar colaboradores:', error);
-    res.status(error.statusCode || 500).json(new ApiResponse({
-      statusCode: error.statusCode || 500,
+    res.status(error.statusCode || 500).json({
+      status: error.statusCode || 500,
       message: error.message || 'Error al buscar colaboradores',
       success: false,
       title: 'Error'
-    }));
+    });
   }
 });
+
+// Contar colaboradores activos
+const countActiveColaboradores = async () => {
+  try {
+    const count = await Colaborador.count({
+      where: { deleted_at: null } // Solo contar colaboradores activos
+    });
+    return count;
+  } catch (error) {
+    console.error('Error al contar colaboradores activos:', error);
+    throw new ApiError('Error al contar colaboradores activos', 500);
+  }
+};
 
 // GET: Buscar colaborador por número de identidad
 router.get('/colaboradores/identidad/:identidad', async (req, res) => {
@@ -54,7 +76,6 @@ router.get('/colaboradores/identidad/:identidad', async (req, res) => {
       });
     }
 
-    // Extraer los campos del colaborador después de asegurar que existe
     const { identidad: id, cargo, nombre, apellido, telefono, correo } = colaborador;
 
     res.status(200).json({
@@ -80,8 +101,6 @@ router.get('/colaboradores/identidad/:identidad', async (req, res) => {
     });
   }
 });
-
-
 
 // Crear un nuevo colaborador
 router.post('/colaboradores', validateBody(createColaboradorSchema), async (req, res) => {
@@ -137,29 +156,51 @@ router.put('/colaboradores/:id', validateBody(updateColaboradorSchema), async (r
   }
 });
 
+// Eliminar un colaborador
+router.delete('/colaboradores/:id', async (req, res) => {
+  const { id } = req.params;
 
-  // Eliminar un colaborador
-  router.delete('/colaboradores/:id', async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      console.log(`Intentando eliminar colaborador con ID: ${id}`);
-      const colaborador = await Colaborador.findByPk(id);
-  
-      if (!colaborador) {
-        console.log(`Colaborador con ID ${id} no encontrado`);
-        return res.status(404).json(new ApiResponse(404, 'Colaborador no encontrado', false, null, 'Error'));
-      }
-  
-      await colaborador.destroy();
-  
-      console.log(`Colaborador con ID ${id} eliminado correctamente`);
-      res.status(200).json(new ApiResponse(200, 'Colaborador eliminado', true, null, 'Éxito'));
-    } catch (error) {
-      console.error(`Error al eliminar colaborador ${id}:`, error);
-      res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al eliminar colaborador', false, null, 'Error'));
+  try {
+    console.log(`Intentando eliminar colaborador con ID: ${id}`);
+    const colaborador = await Colaborador.findByPk(id);
+
+    if (!colaborador) {
+      console.log(`Colaborador con ID ${id} no encontrado`);
+      return res.status(404).json(new ApiResponse(404, 'Colaborador no encontrado', false, null, 'Error'));
     }
-  });
 
+    await colaborador.destroy();
+
+    console.log(`Colaborador con ID ${id} eliminado correctamente`);
+    res.status(200).json(new ApiResponse(200, 'Colaborador eliminado', true, null, 'Éxito'));
+  } catch (error) {
+    console.error(`Error al eliminar colaborador ${id}:`, error);
+    res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al eliminar colaborador', false, null, 'Error'));
+  }
+});
+
+// Obtener conteo de colaboradores activos
+router.get('/colaboradores/count', async (req, res) => {
+  try {
+    const count = await countActiveColaboradores();
+
+    res.status(200).json({
+      status: 200,
+      message: 'Conteo de colaboradores activos obtenido',
+      success: true,
+      data: {
+        colaboradoresCount: count,
+      },
+    });
+  } catch (error) {
+    console.error('Error al obtener el conteo de colaboradores activos:', error);
+    res.status(error.statusCode || 500).json({
+      status: error.statusCode || 500,
+      message: error.message || 'Error al obtener el conteo de colaboradores activos',
+      success: false,
+      data: null,
+    });
+  }
+});
 
 module.exports = router;
