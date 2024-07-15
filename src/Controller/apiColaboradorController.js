@@ -13,6 +13,7 @@ const validateBody = (schema) => (req, res, next) => {
   next();
 };
 
+
 // Obtener todos los colaboradores
 router.get('/colaboradores', async (req, res) => {
   try {
