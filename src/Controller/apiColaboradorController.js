@@ -3,6 +3,15 @@ const router = express.Router();
 const Colaborador = require('../models/Colaborador');
 const { ApiResponse } = require('../api/apiResponse');
 const { ApiError } = require('../api/apiError');
+const { createColaboradorSchema, updateColaboradorSchema } = require('../Schemas/ValidationSchemas');
+
+const validateBody = (schema) => (req, res, next) => {
+  const { error } = schema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json(new ApiResponse(400, error.details.map(e => e.message).join(', '), false, null, 'Error de validación'));
+  }
+  next();
+};
 
 // Obtener todos los colaboradores
 router.get('/colaboradores', async (req, res) => {
@@ -26,8 +35,56 @@ router.get('/colaboradores', async (req, res) => {
   }
 });
 
+// GET: Buscar colaborador por número de identidad
+router.get('/colaboradores/identidad/:identidad', async (req, res) => {
+  const { identidad } = req.params;
+
+  try {
+    const colaborador = await Colaborador.findOne({
+      where: { identidad },
+      attributes: ['identidad', 'cargo', 'nombre', 'apellido', 'telefono', 'correo']
+    });
+
+    if (!colaborador) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Colaborador no encontrado',
+        success: false,
+        data: null
+      });
+    }
+
+    // Extraer los campos del colaborador después de asegurar que existe
+    const { identidad: id, cargo, nombre, apellido, telefono, correo } = colaborador;
+
+    res.status(200).json({
+      status: 200,
+      message: 'Colaborador encontrado',
+      success: true,
+      data: {
+        identidad: id,
+        cargo,
+        nombre,
+        apellido,
+        telefono,
+        correo
+      }
+    });
+  } catch (error) {
+    console.error('Error al buscar colaborador por identidad:', error);
+    res.status(error.statusCode || 500).json({
+      status: error.statusCode || 500,
+      message: error.message || 'Error al buscar colaborador por identidad',
+      success: false,
+      data: null
+    });
+  }
+});
+
+
+
 // Crear un nuevo colaborador
-router.post('/colaboradores', async (req, res) => {
+router.post('/colaboradores', validateBody(createColaboradorSchema), async (req, res) => {
   const { identidad, cargo, nombre, apellido, telefono, correo, password } = req.body;
 
   try {
@@ -38,29 +95,18 @@ router.post('/colaboradores', async (req, res) => {
       apellido,
       telefono,
       correo,
-      password
+      password,
     });
 
-    res.status(201).json(new ApiResponse({
-      statusCode: 201,
-      message: 'Colaborador creado',
-      success: true,
-      data: newColaborador,
-      title: 'Éxito'
-    }));
+    res.status(201).json(new ApiResponse(201, 'Colaborador creado', true, newColaborador, 'Éxito'));
   } catch (error) {
     console.error('Error al crear colaborador:', error);
-    res.status(error.statusCode || 500).json(new ApiResponse({
-      statusCode: error.statusCode || 500,
-      message: error.message || 'Error al crear colaborador',
-      success: false,
-      title: 'Error'
-    }));
+    res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al crear colaborador', false, null, 'Error'));
   }
 });
 
 // Actualizar un colaborador
-router.put('/colaboradores/:id', async (req, res) => {
+router.put('/colaboradores/:id', validateBody(updateColaboradorSchema), async (req, res) => {
   const { id } = req.params;
   const { identidad, cargo, nombre, apellido, telefono, correo, password, newPassword } = req.body;
 
@@ -71,14 +117,10 @@ router.put('/colaboradores/:id', async (req, res) => {
       return res.status(404).json(new ApiResponse(404, 'Colaborador no encontrado', false, null, 'Error'));
     }
 
-    // Verificar si se proporcionó una nueva contraseña y confirmación
-    if (newPassword) {
+    if (password && newPassword) {
       colaborador.password = newPassword;
-    } else {
-      return res.status(400).json(new ApiResponse(400, 'Debe proporcionar una nueva contraseña', false, null, 'Error'));
     }
 
-    // Actualizar otros campos según sea necesario
     colaborador.identidad = identidad || colaborador.identidad;
     colaborador.cargo = cargo || colaborador.cargo;
     colaborador.nombre = nombre || colaborador.nombre;
@@ -94,7 +136,6 @@ router.put('/colaboradores/:id', async (req, res) => {
     res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, error.message || 'Error al actualizar colaborador', false, null, 'Error'));
   }
 });
-
 
 
   // Eliminar un colaborador

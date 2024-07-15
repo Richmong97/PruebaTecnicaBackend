@@ -8,5 +8,6 @@ router.get('/colaboradores', colaboradorController.getAllColaboradores);
 router.post('/colaboradores', colaboradorController.createColaborador);
 router.put('/colaboradores/:id', colaboradorController.updateColaborador);
 router.delete('/colaboradores/:id', colaboradorController.deleteColaborador);
+router.get('/colaboradores/identidad/:identidad', colaboradorController.getColaboradorByIdentidad);
 
 module.exports = router;
