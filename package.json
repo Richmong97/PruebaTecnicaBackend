@@ -8,7 +8,7 @@
     "start": "ts-node src/app.js",
     "dev": "nodemon src/app.js",
     "command": "node commands/index.ts",
-    "seeder:run": "node database/seeders/seed.js"
+    "migrate": "sequelize db:migrate"
   },
   "keywords": [],
   "author": "Fernando Mendez",
@@ -59,6 +59,7 @@
     "@types/treeify": "^1.0.3",
     "@types/uuid": "^9.0.7",
     "prettier": "^3.2.5",
+    "sequelize-cli": "^6.6.2",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.2.2"

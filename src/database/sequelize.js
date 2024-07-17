@@ -32,7 +32,6 @@ async function testConnection() {
   try {
     await sequelize.authenticate();
     console.log('Sequelize Conectado Exitosamente!');
-    console.log('Happy Hacking!');
   } catch (error) {
     console.error('No fue posible crear la conexión con Sequelize', error);
     sequelize.close();

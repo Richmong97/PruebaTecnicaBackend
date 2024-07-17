@@ -42,6 +42,7 @@ Sigue estos pasos para instalar y ejecutar el proyecto localmente.
    ```bash
    npm start
    npm run dev (Nodemon)
+   npm run migrate
    ```
 
    El servidor estará disponible en `http://localhost:3000`.
